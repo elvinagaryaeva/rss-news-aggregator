@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><title>Example Feed</title><link>https://example.test</link><description>Fixture</description>
+<item><guid>article-001</guid><title>First &amp; useful article</title><link>https://example.test/articles/one</link><description><![CDATA[<p>Brief <strong>summary</strong>.</p>]]></description><author>Editor</author><pubDate>Tue, 01 Oct 2024 10:00:00 GMT</pubDate></item>
+<item><guid>article-002</guid><title>Second article</title><link>https://example.test/articles/two</link><description>Another summary</description><pubDate>Wed, 02 Oct 2024 11:30:00 GMT</pubDate></item>
+</channel></rss>

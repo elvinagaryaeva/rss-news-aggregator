@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}RSS-источники{% endblock %}
+{% block content %}
+<h1>RSS-источники · {{ current_user.name }}</h1>
+<p class="muted">Источники и статьи общие; подписки принадлежат выбранному пользователю.</p>
+{% if notice %}<article class="notice">{{ notice }}</article>{% endif %}
+<div class="grid">
+  <form method="post" action="/feeds">
+    <h3>Добавить RSS URL</h3>
+    <label>Название <input name="name" placeholder="Например, Python Insider"></label>
+    <label>URL RSS <input name="url" type="url" required placeholder="https://example.org/rss.xml"></label>
+    <button type="submit">Добавить или подписаться</button>
+  </form>
+  <form method="post" action="/feeds/refresh">
+    <h3>Обновление</h3><p>Загрузить все активные глобальные каналы.</p>
+    <button type="submit" class="secondary">Обновить все</button>
+  </form>
+</div>
+<h2>Мои подписки</h2>
+{% if my_feeds %}
+<figure><table><thead><tr><th>Источник</th><th>URL</th><th>Статус</th><th>Последняя попытка</th><th>Успешно</th><th>Ошибка</th><th></th></tr></thead><tbody>
+{% for feed in my_feeds %}
+<tr><td>{{ feed.name }}</td><td><a href="{{ feed.url }}" target="_blank" rel="noopener">{{ feed.url }}</a></td><td>{{ 'active' if feed.is_active else 'inactive' }}</td><td>{{ feed.last_fetched_at or '—' }}</td><td>{{ feed.last_success_at or '—' }}</td><td class="error">{{ feed.last_error or '—' }}</td><td><form method="post" action="/feeds/{{ feed.id }}/unsubscribe"><button type="submit" class="secondary outline">Отписаться</button></form></td></tr>
+{% endfor %}
+</tbody></table></figure>
+{% else %}<article><p>No RSS feeds subscribed yet. Выберите источник ниже или добавьте URL.</p></article>{% endif %}
+<h2>Доступные источники</h2>
+{% if available_feeds %}
+<figure><table><thead><tr><th>Источник</th><th>URL</th><th>Статус</th><th></th></tr></thead><tbody>
+{% for feed in available_feeds %}
+<tr><td>{{ feed.name }}</td><td><a href="{{ feed.url }}" target="_blank" rel="noopener">{{ feed.url }}</a></td><td>{{ 'active' if feed.is_active else 'inactive' }}</td><td><form method="post" action="/feeds/{{ feed.id }}/subscribe"><button type="submit">Подписаться</button></form></td></tr>
+{% endfor %}
+</tbody></table></figure>
+{% else %}<article><p>Вы подписаны на все доступные источники.</p></article>{% endif %}
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Фильтры{% endblock %}
+{% block content %}
+<h1>Фильтры · {{ current_user.name }}</h1>
+<p class="muted">Фильтры применяются только к статьям из подписок текущего пользователя.</p>
+{% if notice %}<article class="notice">{{ notice }}</article>{% endif %}
+<div class="grid">
+<form method="post" action="/filters">
+  <h2>Keyword-фильтр</h2><input type="hidden" name="filter_type" value="keyword">
+  <label>Название <input name="name" required placeholder="AI news"></label>
+  <label>Ключевые слова <textarea name="keywords" required placeholder="OpenAI, GPT"></textarea></label>
+  <small>По одному слову или фразе в строке либо через запятую.</small>
+  <label>Правило <select name="match_mode"><option value="ANY">ANY — любое слово</option><option value="ALL">ALL — все слова</option></select></label>
+  <button type="submit">Создать и проверить статьи</button>
+</form>
+<form method="post" action="/filters">
+  <h2>Semantic-фильтр</h2><input type="hidden" name="filter_type" value="semantic">
+  <label>Название <input name="name" required placeholder="Football transfers"></label>
+  <label>Тема <textarea name="semantic_query" required placeholder="Transfers, scouting and signing football players"></textarea></label>
+  <label>Порог сходства <input type="number" name="semantic_threshold" min="0" max="1" step="0.01" value="0.20" required></label>
+  <small>Большее значение даёт более строгую выдачу. Модель скачивается при первом использовании.</small>
+  <button type="submit">Создать и проверить статьи</button>
+</form>
+</div>
+<h2>Существующие фильтры</h2>
+{% if filters %}
+{% for filter in filters %}
+<article>
+  <form method="post" action="/filters/{{ filter.id }}">
+    <h3>{{ filter.filter_type|capitalize }}</h3>
+    <label>Название <input name="name" value="{{ filter.name }}" required></label>
+    {% if filter.filter_type == 'keyword' %}
+      <label>Режим <select name="match_mode"><option value="ANY" {% if filter.match_mode == 'ANY' %}selected{% endif %}>ANY</option><option value="ALL" {% if filter.match_mode == 'ALL' %}selected{% endif %}>ALL</option></select></label>
+      <label>Ключевые слова <textarea name="keywords" required>{% for keyword in filter.keywords %}{{ keyword.keyword }}{% if not loop.last %}
+{% endif %}{% endfor %}</textarea></label>
+    {% else %}
+      <label>Тема <textarea name="semantic_query" required>{{ filter.semantic_query }}</textarea></label>
+      <label>Порог сходства <input type="number" name="semantic_threshold" min="0" max="1" step="0.01" value="{{ filter.semantic_threshold }}" required></label>
+    {% endif %}
+    <label><input type="checkbox" name="is_active" value="true" {% if filter.is_active %}checked{% endif %}> Активный</label>
+    <button type="submit">Сохранить и пересчитать</button>
+  </form>
+  <form method="post" action="/filters/{{ filter.id }}/delete" onsubmit="return confirm('Удалить фильтр и его результаты?')"><button type="submit" class="secondary outline">Удалить</button></form>
+</article>
+{% endfor %}
+{% else %}<article><p>No filters configured yet. Создайте первый фильтр выше.</p></article>{% endif %}
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Агрегированная лента{% endblock %}
+{% block content %}
+<h1>Агрегированная лента</h1><p class="muted">Последние статьи из активных RSS-источников.</p>
+<section>
+<h2>Filtered Feed · {{ current_user.name }}</h2><p class="muted">Статьи, совпавшие с активными персональными фильтрами.</p>
+{% if not has_subscriptions %}<article><p>No RSS feeds subscribed yet. <a href="/feeds">Выберите источник</a>.</p></article>{% endif %}
+{% if not has_filters %}<article><p>No filters configured yet. <a href="/filters">Создайте фильтр</a>.</p></article>{% endif %}
+{% if filtered_items %}
+{% for item in filtered_items %}
+<article>
+<header><small>{{ item.article.feed.name }}{% if item.article.published_at %} · {{ item.article.published_at.strftime('%d.%m.%Y %H:%M UTC') }}{% endif %}</small></header>
+<h3>{% if item.article.url %}<a href="{{ item.article.url }}" target="_blank" rel="noopener">{{ item.article.title }}</a>{% else %}{{ item.article.title }}{% endif %}</h3>
+{% if item.article.summary %}<p>{{ item.article.summary }}</p>{% endif %}
+<details><summary>Почему статья попала в выдачу</summary>
+{% for match in item.matches %}
+<p><strong>{{ match.filter.name }}</strong> · {{ match.method }} · score {{ '%.2f'|format(match.score) }}<br>
+{% if match.method == 'semantic' %}
+Тема: {{ match.details.semantic_query }}<br>
+Сходство: {{ '%.3f'|format(match.details.similarity) }} · порог: {{ '%.2f'|format(match.details.threshold) }}<br>
+Модель: {{ match.details.model }}
+{% else %}
+Режим: {{ match.filter.match_mode }} · совпали: {{ match.matched_keywords|join(', ') }}<br>
+{% for keyword, fields in match.matched_fields.items() %}{{ keyword }} → {{ fields|join(', ') }}{% if not loop.last %}; {% endif %}{% endfor %}
+{% endif %}</p>
+{% endfor %}
+</details>
+</article>
+{% endfor %}
+{% else %}<article><p>No articles match your filters yet. <a href="/filters">Проверьте фильтры</a> или обновите RSS-источники.</p></article>{% endif %}
+</section>
+<hr>
+<h2>Статьи моих источников</h2>
+{% if articles %}{% for article in articles %}
+<article><header><small>{{ article.feed.name }}{% if article.published_at %} · {{ article.published_at.strftime('%d.%m.%Y %H:%M UTC') }}{% endif %}</small></header>
+<h3>{% if article.url %}<a href="{{ article.url }}" target="_blank" rel="noopener">{{ article.title }}</a>{% else %}{{ article.title }}{% endif %}</h3>
+{% if article.summary %}<p>{{ article.summary }}</p>{% endif %}</article>
+{% endfor %}{% else %}<article><p>В ваших источниках пока нет статей. Откройте <a href="/feeds">источники</a> и нажмите «Обновить все».</p></article>{% endif %}
+{% endblock %}

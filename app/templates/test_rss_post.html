@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block content %}
+<p><a href="/test-rss">← К тестовому RSS</a></p>
+<article>
+  <h1>{{ post.title }}</h1>
+  <p><small>{{ post.published_at }}{% if post.author %} · {{ post.author }}{% endif %}</small></p>
+  <p>{{ post.description }}</p>
+  {% if post.content %}<hr><p class="post-content">{{ post.content }}</p>{% endif %}
+</article>
+{% endblock %}

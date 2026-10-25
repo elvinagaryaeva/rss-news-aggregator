@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Тестовый RSS{% endblock %}
+{% block content %}
+<h1>Тестовый RSS</h1>
+<p>Опубликуйте статью, чтобы проверить полный путь RSS → агрегатор → фильтры. <a href="/rss/test.xml" target="_blank" rel="noopener">Открыть RSS XML</a></p>
+{% if not subscribed %}<article class="notice">{{ current_user.name }} не подписан на Local Test RSS. <a href="/feeds">Подпишитесь на странице источников</a>, чтобы статьи появлялись в персональной ленте.</article>{% endif %}
+{% if notice %}<article class="notice">{{ notice }}</article>{% endif %}
+<form method="post" action="/test-rss">
+  <h2>Новая публикация</h2>
+  <label>Заголовок <input name="title" required maxlength="500" placeholder="OpenAI releases new model"></label>
+  <label>Описание <textarea name="description" required placeholder="Краткое содержание статьи"></textarea></label>
+  <label>Полный текст <textarea name="content" placeholder="Необязательно"></textarea></label>
+  <label>Автор <input name="author" maxlength="255" placeholder="Необязательно"></label>
+  <button type="submit">Опубликовать и загрузить через RSS</button>
+</form>
+<h2>Опубликованные записи</h2>
+{% if posts %}
+  {% for post in posts %}
+  <article>
+    <h3><a href="/test-rss/posts/{{ post.id }}">{{ post.title }}</a></h3>
+    <p>{{ post.description }}</p>
+    <small>{{ post.published_at }}{% if post.author %} · {{ post.author }}{% endif %} · GUID {{ post.guid }} · {% if post.guid in ingested_guids %}Загружена агрегатором{% else %}Ожидает загрузки{% endif %}</small>
+  </article>
+  {% endfor %}
+{% else %}<article><p>Публикаций пока нет.</p></article>{% endif %}
+{% endblock %}

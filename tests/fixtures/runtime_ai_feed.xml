@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><title>Runtime AI Feed</title><link>http://127.0.0.1</link><description>Deterministic RSS integration fixture</description>
+<item><guid>runtime-ai-001</guid><title>OpenAI model update</title><link>https://example.test/runtime/one</link><description>OpenAI releases a new model.</description><pubDate>Fri, 25 Oct 2024 10:00:00 GMT</pubDate></item>
+<item><guid>runtime-ai-002</guid><title>GPT research report</title><link>https://example.test/runtime/two</link><description>Research on language tools.</description><pubDate>Fri, 25 Oct 2024 11:00:00 GMT</pubDate></item>
+<item><guid>runtime-ai-003</guid><title>Weather report</title><link>https://example.test/runtime/three</link><description>Sunny intervals today.</description><pubDate>Fri, 25 Oct 2024 12:00:00 GMT</pubDate></item>
+<item><guid>runtime-ai-004</guid><title>OpenAI model API</title><link>https://example.test/runtime/four</link><description>New GPT-compatible model interface.</description><pubDate>Fri, 25 Oct 2024 13:00:00 GMT</pubDate></item>
+</channel></rss>

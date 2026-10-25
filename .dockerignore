@@ -1,0 +1,15 @@
+*
+!app/
+!app/**
+!alembic/
+!alembic/**
+!tests/
+!tests/**
+!requirements.txt
+!alembic.ini
+!pytest.ini
+!docker-entrypoint.sh
+!Dockerfile
+
+**/__pycache__/
+**/*.pyc

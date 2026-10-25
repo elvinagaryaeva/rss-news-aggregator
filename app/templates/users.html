@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Пользователи{% endblock %}
+{% block content %}
+<h1>Пользователи</h1>
+<p class="muted">Текущий пользователь: <strong>{{ current_user.name }}</strong>. Переключение меняет персональные подписки, фильтры и ленту в этом браузере.</p>
+{% if notice %}<article class="notice">{{ notice }}</article>{% endif %}
+<form method="post" action="/users">
+  <h2>Новый пользователь</h2>
+  <label>Имя <input name="name" required maxlength="120" placeholder="Teacher"></label>
+  <button type="submit">Создать пользователя</button>
+</form>
+<h2>Выбрать пользователя</h2>
+{% for user in users %}
+<article>
+  <div class="grid">
+    <div><strong>{{ user.name }}</strong> {% if user.id == current_user.id %}<small>· текущий</small>{% endif %}<br><small>Создан {{ user.created_at }}</small></div>
+    <form method="post" action="/users/select"><input type="hidden" name="user_id" value="{{ user.id }}"><button type="submit" {% if user.id == current_user.id %}class="secondary"{% endif %}>Выбрать</button></form>
+    {% if user.name != 'demo' %}<form method="post" action="/users/{{ user.id }}/delete" onsubmit="return confirm('Удалить пользователя и его персональные данные?')"><button type="submit" class="secondary outline">Удалить</button></form>{% endif %}
+  </div>
+</article>
+{% endfor %}
+{% endblock %}

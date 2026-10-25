@@ -1,0 +1,9 @@
+body { padding-bottom: 3rem; }
+article { margin-bottom: 1rem; }
+.muted { color: var(--pico-muted-color); }
+.error { max-width: 20rem; color: #a32929; overflow-wrap: anywhere; }
+td { vertical-align: top; }
+table a { overflow-wrap: anywhere; }
+.notice { border-left: 4px solid var(--pico-primary); }
+details p { margin-bottom: .5rem; }
+.post-content { white-space: pre-wrap; }

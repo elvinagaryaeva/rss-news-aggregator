@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: rss_aggregator
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rss_aggregator"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://postgres:postgres@postgres:5432/rss_aggregator}
+      RSS_FETCH_INTERVAL_SECONDS: ${RSS_FETCH_INTERVAL_SECONDS:-300}
+      RSS_REQUEST_TIMEOUT_SECONDS: ${RSS_REQUEST_TIMEOUT_SECONDS:-20}
+      APP_PORT: ${APP_PORT:-8000}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      INTERNAL_BASE_URL: ${INTERNAL_BASE_URL:-http://app:8000}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
+      SEMANTIC_MODEL_NAME: ${SEMANTIC_MODEL_NAME:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
+      HF_HOME: /hf-cache
+      SESSION_SECRET: ${SESSION_SECRET:-development-only-session-secret}
+      DEMO_RSS_FEEDS: ${DEMO_RSS_FEEDS:-Hacker News|https://hnrss.org/frontpage;BBC World|https://feeds.bbci.co.uk/news/world/rss.xml;NASA Breaking News|https://www.nasa.gov/rss/dyn/breaking_news.rss}
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - hf_cache:/hf-cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  hf_cache:
