@@ -36,4 +36,38 @@
 <h3>{% if article.url %}<a href="{{ article.url }}" target="_blank" rel="noopener">{{ article.title }}</a>{% else %}{{ article.title }}{% endif %}</h3>
 {% if article.summary %}<p>{{ article.summary }}</p>{% endif %}</article>
 {% endfor %}{% else %}<article><p>В ваших источниках пока нет статей. Откройте <a href="/feeds">источники</a> и нажмите «Обновить все».</p></article>{% endif %}
+<script>
+(function () {
+  if (typeof EventSource === 'undefined') return;
+
+  let pending = 0;
+  const es = new EventSource('/api/events', { withCredentials: true });
+
+  es.addEventListener('message', (e) => {
+    let data;
+    try { data = JSON.parse(e.data); } catch (_) { return; }
+    if (data.type === 'article.created') {
+      pending += 1;
+      showBadge();
+    }
+  });
+
+  es.onerror = () => {
+    // EventSource переподключится сам; логируем только для отладки
+    // console.warn('SSE disconnected, reconnecting…');
+  };
+
+  function showBadge() {
+    let badge = document.getElementById('new-articles-badge');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'new-articles-badge';
+      badge.className = 'new-articles-badge';
+      badge.addEventListener('click', () => window.location.reload());
+      document.body.appendChild(badge);
+    }
+    badge.textContent = 'Появились новые статьи (' + pending + ') — обновить';
+  }
+})();
+</script>
 {% endblock %}
