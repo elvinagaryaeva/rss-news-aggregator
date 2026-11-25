@@ -19,6 +19,8 @@ from app.core.config import settings
 from app.models import Article, RSSFeed
 from app.schemas import RefreshResult
 from app.services.filter_service import FilterService
+from app.models import Article, ArticleFilterMatch, Filter, RSSFeed
+from app.services import event_bus
 
 logger = logging.getLogger(__name__)
 
@@ -97,13 +99,44 @@ class RSSService:
                 new_articles.append(article)
                 added += 1
             # A refresh only evaluates its newly persisted articles, never the full corpus.
+                        # A refresh only evaluates its newly persisted articles, never the full corpus.
             self.db.flush()
             matching_service = FilterService(self.db)
             for article in new_articles:
                 matching_service.evaluate_new_article(article)
+            self.db.flush()
+
+            # Collect SSE payloads BEFORE commit (while identity map / lazy loads are cheap),
+            # but publish them only AFTER a successful commit — otherwise we'd announce
+            # articles that were rolled back.
+            pending_events = []
+            for article in new_articles:
+                user_ids = sorted(
+                    self.db.scalars(
+                        select(Filter.user_id)
+                        .join(ArticleFilterMatch, ArticleFilterMatch.filter_id == Filter.id)
+                        .where(ArticleFilterMatch.article_id == article.id)
+                        .distinct()
+                    ).all()
+                )
+                if user_ids:
+                    pending_events.append(
+                        {
+                            "type": "article.created",
+                            "article_id": article.id,
+                            "feed_id": article.feed_id,
+                            "title": article.title,
+                            "user_ids": user_ids,
+                        }
+                    )
+
             feed.last_success_at = now
             feed.last_error = None
             self.db.commit()
+
+            for event in pending_events:
+                event_bus.publish_from_thread(event)
+
             return RefreshResult(feed_id=feed.id, feed_name=feed.name, success=True, added=added, skipped=skipped)
         except Exception as exc:  # One source failing must not stop other feeds.
             self.db.rollback()
