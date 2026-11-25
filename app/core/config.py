@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     )
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    sse_enabled: bool = True
 
     def parsed_demo_feeds(self) -> list[tuple[str, str]]:
         feeds: list[tuple[str, str]] = []
