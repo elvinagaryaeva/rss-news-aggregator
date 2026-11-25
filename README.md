@@ -1,7 +1,6 @@
-# RSS Aggregator — Phases 1–5
+# RSS Aggregator
 
-Учебное web-приложение на FastAPI: агрегирует статьи из внешних и собственного RSS-каналов, применяет персональные keyword- и semantic-фильтры и объясняет каждое совпадение. Реализованы Phase 1–5, включая переключение пользователей без аутентификации.
-
+Учебное web-приложение на FastAPI: агрегирует статьи из внешних и собственного RSS-каналов, применяет персональные keyword- и semantic-фильтры и объясняет каждое совпадение.
 ## Реализовано
 
 - PostgreSQL, SQLAlchemy 2.x и Alembic migration;
@@ -51,7 +50,7 @@ tests/                   # unit/API tests and RSS fixture
 2. Запустите:
 
    ```bash
-   docker compose up --build
+   docker compose up -d --build
    ```
 
 3. Откройте <http://localhost:8000>. На `/users` создайте и выберите пользователя. На `/feeds` управляйте его подписками, на `/filters` — keyword- и semantic-фильтрами, на `/test-rss` публикуйте статьи в собственный канал.
@@ -105,21 +104,17 @@ docker compose up --build
 ## Tests
 
 ```bash
-pip install -r requirements.txt
-pytest -q
+docker compose exec app python -m pytest -q
 ```
 
-The suite covers RSS parsing, persistence, deduplication, invalid sources, keyword/semantic filtering, explainability, publication, multi-user subscriptions and the health endpoint. It uses in-memory SQLite solely for test isolation; Docker uses PostgreSQL.
+Набор тестов охватывает анализ RSS, сохранение данных, дедупликацию, недопустимые источники, фильтрацию по ключевым словам/семантическую фильтрацию, объяснимость, публикацию, многопользовательские подписки и конечную точку проверки работоспособности. Он использует SQLite в оперативной памяти исключительно для изоляции тестов; Docker использует PostgreSQL.
 
-## Phase 1 boundaries
 
-Initially deferred after Phase 1 were keyword filters, semantic filtering, a test-RSS publishing UI, authentication and user-facing feed management. Phases 2–5 added filtering, the local test RSS and personal feed management. Authentication remains deferred.
+## Фильтрация ключевых слов
 
-## Phase 2 — Keyword Filtering
+Добавляется персональная, объяснимая фильтрация ключевых слов для существующего пользователя «демо». «Фильтр» принадлежит «Пользователю»; Ключевые слова хранятся как отдельные записи FilterKeyword, а не как поле базы данных, разделенное запятыми. Каждое ключевое слово нормализуется с помощью Unicode NFKC, `casefold()` и свертывания пробелов. Сопоставление не учитывает регистр для русского и английского языков, поддерживает фразы, состоящие из нескольких слов, и использует границы слов Юникода, поэтому `AI` не соответствует середине несвязанного слова.
 
-Phase 2 adds personal, explainable keyword filtering for the existing `demo` user. A `Filter` belongs to a `User`; keywords are stored as separate `FilterKeyword` records rather than as a comma-separated database field. Each keyword is normalized with Unicode NFKC, `casefold()` and whitespace collapsing. Matching is case-insensitive for Russian and English, supports multi-word phrases, and uses Unicode word boundaries so `AI` does not match the middle of an unrelated word.
-
-`ANY` includes an article when at least one keyword occurs in `title`, `summary`, or `content`. `ALL` requires every keyword. The saved `ArticleFilterMatch` includes the keyword method, score (`matched / total`), exact matched keywords, the fields where each was found, and JSON `details` with the full explanation. A unique `(article_id, filter_id)` constraint prevents duplicate matches.
+`ANY` включает в себя статью, если хотя бы одно ключевое слово встречается в заголовке, сводке или содержании. `ALL` требует каждого ключевого слова. Сохраненный «ArticleFilterMatch» включает в себя метод ключевых слов, оценку («соответствует/общая»), ключевые слова с точным соответствием, поля, в которых каждое из них было найдено, а также «подробности» JSON с полным объяснением. Уникальное ограничение `(article_id, filter_id)` предотвращает дублирование совпадений.
 
 ```
 RSSFeed → Article → Matching Engine → ArticleFilterMatch
@@ -129,24 +124,23 @@ RSSFeed → Article → Matching Engine → ArticleFilterMatch
                             FilterKeyword
 ```
 
-Lifecycle:
+Жизненный цикл:
 
-- Creating or changing one filter evaluates that filter against existing articles only from feeds subscribed by its owner; its old matches are replaced.
-- Deleting a filter cascades to its keywords and matches.
-- RSS ingestion flushes only its newly saved articles, then evaluates them only against active keyword filters owned by users subscribed to that article's feed. It does not recompute the full article corpus on each refresh.
+- При создании или изменении одного фильтра этот фильтр сравнивается с существующими статьями только из каналов, на которые подписан его владелец.
+- Удаление фильтра каскадируется по его ключевым словам и совпадениям.
+- При приеме RSS сбрасываются только недавно сохраненные статьи, а затем сравниваются их только с активными фильтрами ключевых слов, принадлежащими пользователям, подписанным на канал этой статьи. Он не пересчитывает полный корпус статей при каждом обновлении.
 
 ### UI and API
 
-- `/filters` — create, edit, activate/deactivate, delete, and re-evaluate demo-user filters. Keywords accept comma-separated values or one per line.
-- `/` now begins with a personal **Filtered Feed** and a short human-readable explanation for every matching filter.
+- `/filters` — позволяет создавать, редактировать, активировать/деактивировать, удалять и переоценивать фильтры демо-пользователей. Ключевые слова принимают значения, разделенные запятыми, или по одному в строке.
+- `/` теперь начинается с личного отфильтрованного канала и краткого понятного для человека объяснения для каждого соответствующего фильтра.
 - `GET /api/filters`, `POST /api/filters`, `PATCH /api/filters/{id}`, `DELETE /api/filters/{id}`.
-- `GET /api/articles/filtered` and `GET /api/articles/{id}/matches` expose the same explanation as data. The optional `user_id` query parameter supports the existing multi-user data model without adding authentication.
+- `GET /api/articles/filtered` и `GET /api/articles/{id}/matches` предоставляют то же объяснение, что и данные. Необязательный параметр запроса user_id поддерживает существующую многопользовательскую модель данных без добавления аутентификации.
 
-New migration: `0002_keyword_filters` creates `filters`, `filter_keywords`, and `article_filter_matches`.
+Новая миграция: `0002_keyword_filters` создает `filters`, `filter_keywords` и `article_filter_matches`.
 
-Authentication and user switching are **not implemented yet**. Semantic filtering is described below.
 
-## Local Test RSS
+## Локальный тестовый RSS канал
 
 `/test-rss` позволяет опубликовать статью и сразу показать полный путь агрегирования. Исходные записи хранятся в отдельной таблице `test_rss_posts` с уникальным стабильным UUID GUID. `GET /rss/test.xml` формирует валидный RSS 2.0 через XML builder, который экранирует пользовательский текст. Опциональный plain-text `content` передаётся через стандартный `content:encoded` extension; `pubDate` выводится в UTC по RFC 2822.
 
@@ -168,7 +162,7 @@ Test RSS UI → TestRSSPost → /rss/test.xml → RSSService → Article
 
 На `/filters` можно создать отдельный semantic-фильтр: задать название, тему и порог сходства (по умолчанию `0.20`). Keyword-фильтры продолжают работать по правилам `ANY`/`ALL`; semantic-фильтры не используют список ключевых слов. Тип уже созданного фильтра не меняется — для другого типа создайте новый.
 
-Используется локальная модель [`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2) с поддержкой русского и английского. При первом использовании semantic-фильтра `sentence-transformers` скачивает её; затем файлы берутся из локального кеша. В Docker кеш находится в volume `hf_cache`, поэтому обычный перезапуск контейнера его сохраняет. Для локального запуска можно задать `HF_HOME` на папку кеша. Первое создание фильтра может занять время и требует доступа к модели. Keyword-фильтры и RSS работают независимо от загрузки модели.
+Используется локальная модель [`intfloat/multilingual-e5-small`](https://huggingface.co/intfloat/multilingual-e5-small) с поддержкой русского и английского. При первом использовании semantic-фильтра скачивает её; затем файлы берутся из локального кеша. В Docker кеш находится в volume `hf_cache`, поэтому обычный перезапуск контейнера его сохраняет. Для локального запуска можно задать `HF_HOME` на папку кеша. Первое создание фильтра может занять время и требует доступа к модели. Keyword-фильтры и RSS работают независимо от загрузки модели.
 
 Текст статьи составляется из title, summary и ограниченного по длине content. Для каждой пары `(article_id, model_name)` в `article_embeddings` хранится один вектор; для каждой пары `(filter_id, model_name)` в `filter_embeddings` хранится вектор темы. Изменение темы обновляет его, изменение только порога использует прежний. Модель загружается лениво один раз на процесс. Отдельная векторная БД не требуется.
 
@@ -184,9 +178,9 @@ API: `POST /api/filters` принимает `{"name":"Football transfers","filte
 
 Миграция `0004_semantic_filtering` добавляет настройки фильтра и таблицы кеша поверх `0003`. Реальная модель не загружается при запуске приложения или при выполнении unit tests с fake encoder.
 
-## Multi-user mode
+## Мультипользовательский режим
 
-`/users` показывает пользователей, позволяет создать нового и выбрать его как текущего в этом браузере. Выбор хранится в подписанной cookie-сессии Starlette. Если выбранный пользователь удалён или cookie отсутствует, приложение использует `demo`. Это контекст для демонстрации, **не система аутентификации**: паролей и разграничения прав API нет. `demo` нельзя удалить. Для общего стенда задайте приватный `SESSION_SECRET` в `.env`; без него используется development fallback с предупреждением в логах.
+`/users` показывает пользователей, позволяет создать нового и выбрать его как текущего в этом браузере. Выбор хранится в подписанной cookie-сессии Starlette. Если выбранный пользователь удалён или cookie отсутствует, приложение использует `demo`. Для общего стенда задайте приватный `SESSION_SECRET` в `.env`; без него используется development fallback с предупреждением в логах.
 
 ```
 User ── FeedSubscription ──→ RSSFeed ──→ Article
@@ -201,7 +195,7 @@ User ── FeedSubscription ──→ RSSFeed ──→ Article
 
 Схему БД менять не потребовалось: `users.name` уже уникален, `feed_subscriptions` имеет уникальную пару `(user_id, feed_id)`, а каскады фильтров и совпадений уже существуют. Поэтому миграции `0005` нет; текущая вершина Alembic — `0004_semantic_filtering`.
 
-## 10-point demo
+## demo
 
 1. Откройте `/users`, создайте `Teacher` и выберите его. Новая учётная запись пока не имеет подписок.
 2. На `/feeds` подпишитесь на `Local Test RSS`, затем добавьте внешний RSS URL. Если URL уже есть в списке доступных, просто нажмите «Подписаться».
