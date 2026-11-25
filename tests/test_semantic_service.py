@@ -161,7 +161,7 @@ def test_semantic_api_and_ui_with_fake_encoder(database, fake_encoder):
         assert client.post("/api/filters", json={"name": "bad", "filter_type": "keyword", "keywords": []}).status_code == 422
         defaulted = client.post("/api/filters", json={"name": "Default threshold", "filter_type": "semantic", "semantic_query": "football"})
         assert defaulted.status_code == 201
-        assert defaulted.json()["filter"]["semantic_threshold"] == 0.20
+        assert defaulted.json()["filter"]["semantic_threshold"] == 0.83
         assert client.delete(f"/api/filters/{filter_id}").status_code == 204
         assert database.scalar(select(FilterEmbedding).where(FilterEmbedding.filter_id == filter_id)) is None
 
