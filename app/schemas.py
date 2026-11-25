@@ -86,7 +86,7 @@ class FilterCreate(BaseModel):
             if not self.semantic_query or not self.semantic_query.strip():
                 raise ValueError("Semantic query is required")
             if self.semantic_threshold is None:
-                self.semantic_threshold = 0.20
+                self.semantic_threshold = 0.83
             if not 0.0 <= self.semantic_threshold <= 1.0:
                 raise ValueError("Semantic threshold must be between 0 and 1")
         else:

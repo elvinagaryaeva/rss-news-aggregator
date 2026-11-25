@@ -15,6 +15,9 @@ from app.services.seed import seed_default_data
 from app.test_rss import router as test_rss_router
 from app.users import router as users_router
 from app.web import router as web_router
+import asyncio
+from app import events as events_router
+from app.services.event_bus import set_main_loop
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -31,6 +34,7 @@ def scheduled_refresh() -> None:
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    set_main_loop(asyncio.get_running_loop())
     if settings.session_secret == "development-only-session-secret":
         logger.warning("Using the development SESSION_SECRET; set a private value for shared deployments")
     db = SessionLocal()
@@ -62,3 +66,4 @@ app.include_router(api_router)
 app.include_router(test_rss_router)
 app.include_router(users_router)
 app.include_router(web_router)
+app.include_router(events_router.router)
