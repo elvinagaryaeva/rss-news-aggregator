@@ -7,3 +7,24 @@ table a { overflow-wrap: anywhere; }
 .notice { border-left: 4px solid var(--pico-primary); }
 details p { margin-bottom: .5rem; }
 .post-content { white-space: pre-wrap; }
+/* SSE badge: появляется на главной при новых статьях */
+.new-articles-badge {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--pico-primary-background, #2563eb);
+  color: var(--pico-primary-inverse, #fff);
+  padding: 10px 18px;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .18);
+  cursor: pointer;
+  font-weight: 600;
+  z-index: 1000;
+  transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+  user-select: none;
+}
+.new-articles-badge:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .22);
+}
